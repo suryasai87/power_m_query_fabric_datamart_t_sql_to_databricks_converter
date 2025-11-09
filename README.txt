@@ -161,12 +161,31 @@ Warehouse Information:
 4. USAGE EXAMPLES
 ================================================================================
 
-Basic Conversion (No Testing)
-------------------------------
+NOTE: The script supports both local filesystem paths and Unity Catalog volumes.
+Volume paths start with /Volumes/catalog/schema/volume/...
+
+Basic Conversion (No Testing) - Local Paths
+--------------------------------------------
 ```
 python convert_to_databricks.py \
   --input-dir ./tests/sample_queries \
   --output-dir ./output
+```
+
+Conversion with Unity Catalog Volumes
+--------------------------------------
+```
+python convert_to_databricks.py \
+  --input-dir /Volumes/hls_amer_catalog/default/sql_queries/input \
+  --output-dir /Volumes/hls_amer_catalog/default/sql_queries/output
+```
+
+Mixed: Read from Local, Write to Volume
+----------------------------------------
+```
+python convert_to_databricks.py \
+  --input-dir ./tests/sample_queries \
+  --output-dir /Volumes/hls_amer_catalog/default/sql_queries/output
 ```
 
 Conversion with Databricks Testing

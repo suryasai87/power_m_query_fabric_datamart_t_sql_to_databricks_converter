@@ -5,8 +5,14 @@ Power M Query / Fabric Datamart / T-SQL to Databricks SQL Converter.
 This script converts SQL queries from various sources to Databricks SQL format
 and optionally tests them against Databricks SQL Serverless.
 
+Supports both local filesystem paths and Unity Catalog volumes.
+
 Usage:
+    # Local paths:
     python convert_to_databricks.py --input-dir ./tests/sample_queries --output-dir ./output --test
+
+    # Unity Catalog volumes:
+    python convert_to_databricks.py --input-dir /Volumes/catalog/schema/volume/input --output-dir /Volumes/catalog/schema/volume/output --test
 
 For help:
     python convert_to_databricks.py --help
@@ -17,13 +23,14 @@ import sys
 import json
 import logging
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Union
 from datetime import datetime
 
 import click
 from rich.console import Console
 from rich.table import Table
 from rich.progress import track
+from databricks.sdk import WorkspaceClient
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -45,22 +52,44 @@ console = Console()
 
 
 class MigrationTool:
-    """Main migration tool orchestrator."""
+    """Main migration tool orchestrator with support for local and Unity Catalog volume paths."""
 
     def __init__(self, input_dir: str, output_dir: str, catalog: str = None, schema: str = None):
         """
         Initialize migration tool.
 
         Args:
-            input_dir: Directory containing source query files
-            output_dir: Directory for output files
+            input_dir: Directory containing source query files (local path or /Volumes/...)
+            output_dir: Directory for output files (local path or /Volumes/...)
             catalog: Target Databricks catalog
             schema: Target schema
         """
-        self.input_dir = Path(input_dir)
-        self.output_dir = Path(output_dir)
+        self.input_dir_str = input_dir
+        self.output_dir_str = output_dir
         self.catalog = catalog or DEFAULT_CATALOG
         self.schema = schema or DEFAULT_SCHEMA
+
+        # Determine if paths are volumes or local
+        self.input_is_volume = self._is_volume_path(input_dir)
+        self.output_is_volume = self._is_volume_path(output_dir)
+
+        # Initialize Databricks client if volumes are used
+        self.dbx_client = None
+        if self.input_is_volume or self.output_is_volume:
+            try:
+                self.dbx_client = WorkspaceClient(profile=DATABRICKS_PROFILE)
+                logger.info(f"Connected to Databricks for volume operations")
+            except Exception as e:
+                logger.error(f"Failed to connect to Databricks: {e}")
+                raise
+
+        # For local paths, use Path objects
+        if not self.input_is_volume:
+            self.input_dir = Path(input_dir)
+        if not self.output_is_volume:
+            self.output_dir = Path(output_dir)
+            # Create output directory for local paths
+            self.output_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize converters
         self.tsql_converter = TSQLConverter(self.catalog, self.schema)
@@ -71,12 +100,70 @@ class MigrationTool:
         self.conversion_results = []
         self.test_results = []
 
-        # Create output directory
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+    @staticmethod
+    def _is_volume_path(path: str) -> bool:
+        """Check if path is a Unity Catalog volume path."""
+        return path.startswith('/Volumes/')
+
+    def _list_files_in_volume(self, volume_path: str) -> List[str]:
+        """
+        List SQL and M files in a Unity Catalog volume.
+
+        Args:
+            volume_path: Volume path starting with /Volumes/
+
+        Returns:
+            List of file paths
+        """
+        files = []
+        try:
+            for file_info in self.dbx_client.files.list_directory_contents(volume_path):
+                if file_info.is_directory:
+                    # Recursively list subdirectories
+                    files.extend(self._list_files_in_volume(file_info.path))
+                elif file_info.path.endswith('.sql') or file_info.path.endswith('.m'):
+                    files.append(file_info.path)
+        except Exception as e:
+            logger.error(f"Error listing volume files: {e}")
+        return files
+
+    def _read_file(self, file_path: Union[str, Path]) -> str:
+        """
+        Read file content from local or volume path.
+
+        Args:
+            file_path: Local path or volume path
+
+        Returns:
+            File content as string
+        """
+        if isinstance(file_path, str) and self._is_volume_path(file_path):
+            # Read from volume
+            with self.dbx_client.files.download(file_path) as f:
+                return f.read().decode('utf-8')
+        else:
+            # Read from local filesystem
+            return Path(file_path).read_text()
+
+    def _write_file(self, file_path: str, content: str):
+        """
+        Write file content to local or volume path.
+
+        Args:
+            file_path: Local path or volume path
+            content: Content to write
+        """
+        if self._is_volume_path(file_path):
+            # Write to volume
+            self.dbx_client.files.upload(file_path, content.encode('utf-8'), overwrite=True)
+        else:
+            # Write to local filesystem
+            with open(file_path, 'w') as f:
+                f.write(content)
 
     def convert_all_files(self) -> List[Dict]:
         """
-        Convert all files in input directory.
+        Convert all files in input directory (local or volume).
 
         Returns:
             List of conversion results
@@ -84,7 +171,17 @@ class MigrationTool:
         console.print("\n[bold blue]Starting conversion...[/bold blue]\n")
 
         # Find all supported files
-        files = list(self.input_dir.glob('**/*.sql')) + list(self.input_dir.glob('**/*.m'))
+        if self.input_is_volume:
+            files = self._list_files_in_volume(self.input_dir_str)
+            console.print(f"[cyan]Reading from Unity Catalog volume: {self.input_dir_str}[/cyan]")
+        else:
+            files = list(self.input_dir.glob('**/*.sql')) + list(self.input_dir.glob('**/*.m'))
+            console.print(f"[cyan]Reading from local directory: {self.input_dir}[/cyan]")
+
+        if self.output_is_volume:
+            console.print(f"[cyan]Writing to Unity Catalog volume: {self.output_dir_str}[/cyan]\n")
+        else:
+            console.print(f"[cyan]Writing to local directory: {self.output_dir}[/cyan]\n")
 
         for file_path in track(files, description="Converting files..."):
             try:
@@ -101,19 +198,29 @@ class MigrationTool:
 
         return self.conversion_results
 
-    def _convert_file(self, file_path: Path):
-        """Convert a single file."""
+    def _convert_file(self, file_path: Union[str, Path]):
+        """Convert a single file (from local or volume path)."""
         logger.info(f"Converting file: {file_path}")
 
-        # Read file content
-        content = file_path.read_text()
+        # Get file name and extension
+        if isinstance(file_path, str):
+            file_name = os.path.basename(file_path)
+            file_ext = os.path.splitext(file_path)[1]
+            file_stem = os.path.splitext(file_name)[0]
+        else:
+            file_name = file_path.name
+            file_ext = file_path.suffix
+            file_stem = file_path.stem
+
+        # Read file content using helper method
+        content = self._read_file(file_path)
 
         # Determine file type and convert
-        if file_path.suffix == '.m':
+        if file_ext == '.m':
             # Power M Query file
             converted_sql, conversion_log = self.power_m_converter.convert(content)
             converter_type = 'Power M Query'
-        elif file_path.suffix == '.sql':
+        elif file_ext == '.sql':
             # Check if it's a DDL or query
             if 'CREATE TABLE' in content.upper():
                 converted_sql, conversion_log = self.tsql_converter.convert_ddl(content)
@@ -121,24 +228,36 @@ class MigrationTool:
                 converted_sql, conversion_log = self.tsql_converter.convert_query(content)
             converter_type = 'T-SQL / Fabric'
         else:
-            logger.warning(f"Unsupported file type: {file_path.suffix}")
+            logger.warning(f"Unsupported file type: {file_ext}")
             return
 
-        # Generate output file name
-        output_file = self.output_dir / f"{file_path.stem}_databricks.sql"
+        # Generate output file path
+        output_file_name = f"{file_stem}_databricks.sql"
+        if self.output_is_volume:
+            output_file = f"{self.output_dir_str.rstrip('/')}/{output_file_name}"
+        else:
+            output_file = str(self.output_dir / output_file_name)
 
-        # Write converted SQL
-        with open(output_file, 'w') as f:
-            f.write(f"-- Converted from: {file_path.name}\n")
-            f.write(f"-- Converter: {converter_type}\n")
-            f.write(f"-- Conversion Date: {datetime.now().isoformat()}\n")
-            f.write(f"-- Original SQL:\n/*\n{content}\n*/\n\n")
-            f.write(f"-- Databricks SQL:\n{converted_sql}\n")
+        # Build output content
+        output_content = f"""-- Converted from: {file_name}
+-- Converter: {converter_type}
+-- Conversion Date: {datetime.now().isoformat()}
+-- Original SQL:
+/*
+{content}
+*/
+
+-- Databricks SQL:
+{converted_sql}
+"""
+
+        # Write converted SQL using helper method
+        self._write_file(output_file, output_content)
 
         # Record results
         self.conversion_results.append({
-            'file': file_path.name,
-            'output': str(output_file),
+            'file': file_name,
+            'output': output_file,
             'converter': converter_type,
             'status': 'success',
             'conversion_notes': [note['message'] for note in conversion_log]
@@ -146,50 +265,55 @@ class MigrationTool:
 
     def generate_report(self):
         """Generate migration report in markdown format."""
-        report_file = self.output_dir / 'migration_report.md'
+        # Build report content
+        report_content = "# SQL Migration Report\n\n"
+        report_content += f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        report_content += f"**Source Directory:** {self.input_dir_str}\n\n"
+        report_content += f"**Target Catalog:** {self.catalog}\n\n"
+        report_content += f"**Target Schema:** {self.schema}\n\n"
 
-        with open(report_file, 'w') as f:
-            f.write("# SQL Migration Report\n\n")
-            f.write(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-            f.write(f"**Source Directory:** {self.input_dir}\n\n")
-            f.write(f"**Target Catalog:** {self.catalog}\n\n")
-            f.write(f"**Target Schema:** {self.schema}\n\n")
+        # Summary
+        report_content += "## Summary\n\n"
+        total = len(self.conversion_results)
+        successful = sum(1 for r in self.conversion_results if r.get('status') == 'success')
+        report_content += f"- **Total Files:** {total}\n"
+        report_content += f"- **Successful:** {successful}\n"
+        report_content += f"- **Failed:** {total - successful}\n\n"
 
-            # Summary
-            f.write("## Summary\n\n")
-            total = len(self.conversion_results)
-            successful = sum(1 for r in self.conversion_results if r.get('status') == 'success')
-            f.write(f"- **Total Files:** {total}\n")
-            f.write(f"- **Successful:** {successful}\n")
-            f.write(f"- **Failed:** {total - successful}\n\n")
+        # Conversion Details
+        report_content += "## Conversion Details\n\n"
+        for result in self.conversion_results:
+            report_content += f"### {result['file']}\n\n"
+            report_content += f"- **Status:** {result.get('status', 'unknown')}\n"
+            report_content += f"- **Converter:** {result.get('converter', 'N/A')}\n"
 
-            # Conversion Details
-            f.write("## Conversion Details\n\n")
-            for result in self.conversion_results:
-                f.write(f"### {result['file']}\n\n")
-                f.write(f"- **Status:** {result.get('status', 'unknown')}\n")
-                f.write(f"- **Converter:** {result.get('converter', 'N/A')}\n")
+            if result.get('conversion_notes'):
+                report_content += f"\n**Conversion Notes:**\n\n"
+                for note in result['conversion_notes']:
+                    report_content += f"- {note}\n"
 
-                if result.get('conversion_notes'):
-                    f.write(f"\n**Conversion Notes:**\n\n")
-                    for note in result['conversion_notes']:
-                        f.write(f"- {note}\n")
+            if result.get('error'):
+                report_content += f"\n**Error:** {result['error']}\n"
 
-                if result.get('error'):
-                    f.write(f"\n**Error:** {result['error']}\n")
+            report_content += "\n---\n\n"
 
-                f.write("\n---\n\n")
+        # Test Results (if available)
+        if self.test_results:
+            report_content += "## Test Results\n\n"
+            for test in self.test_results:
+                report_content += f"### {test['file']}\n\n"
+                report_content += f"- **Status:** {test['status']}\n"
+                if test.get('error'):
+                    report_content += f"- **Error:** {test['error']}\n"
+                report_content += "\n"
 
-            # Test Results (if available)
-            if self.test_results:
-                f.write("## Test Results\n\n")
-                for test in self.test_results:
-                    f.write(f"### {test['file']}\n\n")
-                    f.write(f"- **Status:** {test['status']}\n")
-                    if test.get('error'):
-                        f.write(f"- **Error:** {test['error']}\n")
-                    f.write("\n")
+        # Write report file
+        if self.output_is_volume:
+            report_file = f"{self.output_dir_str.rstrip('/')}/migration_report.md"
+        else:
+            report_file = str(self.output_dir / 'migration_report.md')
 
+        self._write_file(report_file, report_content)
         console.print(f"[bold green]Report generated:[/bold green] {report_file}")
 
     def test_conversions(self, dry_run: bool = False):
@@ -215,8 +339,8 @@ class MigrationTool:
                     continue
 
                 try:
-                    output_file = Path(result['output'])
-                    content = output_file.read_text()
+                    output_file = result['output']
+                    content = self._read_file(output_file)
 
                     # Extract Databricks SQL (skip comments)
                     lines = content.split('\n')
