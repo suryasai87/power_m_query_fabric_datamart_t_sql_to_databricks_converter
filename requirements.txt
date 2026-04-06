@@ -1,24 +1,37 @@
-# Databricks SDK
+# DW Migration Assistant — Backend Dependencies
+# Web framework
+fastapi>=0.109.0
+uvicorn>=0.27.0
+pydantic>=2.0.0
+
+# Databricks connectivity
+databricks-sql-connector>=3.0.0
 databricks-sdk>=0.18.0
 
-# SQL Parsing and Transformation
-sqlparse>=0.4.4
+# SQL parsing & transpilation
 sqlglot>=20.0.0
+sqlparse>=0.4.4
 
-# Data Processing
-pandas>=2.0.0
+# LLM integration
+openai>=1.0.0
+
+# Database connectors (source systems)
+jaydebeapi>=1.2.3
+JPype1>=1.4.0
+psycopg2-binary>=2.9.0
+pymysql>=1.1.0
+snowflake-connector-python>=3.0.0
+
+# Utilities
+requests>=2.31.0
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+
+# CLI (legacy converter)
+click>=8.1.7
+rich>=13.0.0
 
 # Testing
 pytest>=7.4.0
 pytest-cov>=4.1.0
-
-# Utilities
-python-dotenv>=1.0.0
-pyyaml>=6.0.1
-
-# Logging
-colorlog>=6.7.0
-
-# CLI
-click>=8.1.7
-rich>=13.0.0
+pytest-asyncio>=0.21.0

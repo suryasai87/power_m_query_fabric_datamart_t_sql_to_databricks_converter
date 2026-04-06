@@ -1,0 +1,16 @@
+command:
+  - uvicorn
+  - app.main:app
+  - --host
+  - "0.0.0.0"
+  - --port
+  - "8000"
+env:
+  - name: PYTHONPATH
+    value: "."
+  - name: DATABRICKS_HOST
+    value: "https://fe-vm-hls-amer.cloud.databricks.com"
+  - name: DATABRICKS_HTTP_PATH
+    value: "/sql/1.0/warehouses/4b28691c780d9875"
+  - name: APP_PORT
+    value: "8000"
