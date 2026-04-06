@@ -35,6 +35,10 @@ function post<T>(path: string, data: unknown): Promise<T> {
   return request<T>(path, { method: 'POST', body: JSON.stringify(data) })
 }
 
+function put<T>(path: string, data: unknown): Promise<T> {
+  return request<T>(path, { method: 'PUT', body: JSON.stringify(data) })
+}
+
 function del<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' })
 }
@@ -59,63 +63,60 @@ export const api = {
 
   // Connection
   testConnection: (config: ConnectionConfig) =>
-    post<ConnectionTestResult>('/connection/test', config),
+    post<ConnectionTestResult>('/connect/test', config),
 
   extractInventory: (config: ConnectionConfig) =>
-    post<InventoryItem[]>('/connection/inventory', config),
+    post<InventoryItem[]>('/connect/extract-inventory', config),
 
   // Migration
   startMigration: (data: { tables: string[]; source_config: ConnectionConfig; options?: Record<string, unknown> }) =>
-    post<MigrationJob>('/migration/start', data),
+    post<MigrationJob>('/migrate/start', data),
 
   getMigrationStatus: (jobId: string) =>
-    request<MigrationJob>(`/migration/status/${jobId}`),
+    request<MigrationJob>(`/migrate/progress/${jobId}`),
 
-  listMigrations: () => request<MigrationJob[]>('/migration/list'),
+  listMigrations: () => request<MigrationJob[]>('/migrate/jobs'),
 
   // Schedules
   createSchedule: (data: Omit<Schedule, 'id' | 'last_run' | 'next_run'>) =>
-    post<Schedule>('/schedules', data),
+    post<Schedule>('/schedule/create', data),
 
-  listSchedules: () => request<Schedule[]>('/schedules'),
+  listSchedules: () => request<Schedule[]>('/schedule/list'),
 
-  deleteSchedule: (id: string) => del<{ success: boolean }>(`/schedules/${id}`),
+  deleteSchedule: (id: string) => del<{ success: boolean }>(`/schedule/${id}`),
 
   toggleSchedule: (id: string, enabled: boolean) =>
-    post<Schedule>(`/schedules/${id}/toggle`, { enabled }),
+    put<Schedule>(`/schedule/${id}`, { enabled }),
 
   getScheduleHistory: (id: string) =>
-    request<MigrationHistoryItem[]>(`/schedules/${id}/history`),
+    request<MigrationHistoryItem[]>('/schedule/executions/history'),
 
   // Schema Compare
   compareSchemas: (data: { source_table: string; target_table: string }) =>
-    post<SchemaComparison>('/schema/compare', data),
+    post<SchemaComparison>('/compare/schemas', data),
 
   // Cost Estimator
   estimateCost: (data: { tables: string[]; storage_gb: number; daily_queries: number }) =>
-    post<CostEstimate>('/cost/estimate', data),
+    post<CostEstimate>('/estimate/migration', data),
 
   // Test Queries
   runTestQueries: (data: { queries: string[] }) =>
-    post<TestQueryResult[]>('/test/queries', data),
+    post<TestQueryResult[]>('/test/batch', data),
 
   // Snapshots / Rollback
   createSnapshot: (data: { name: string; tables: string[] }) =>
-    post<Snapshot>('/snapshots', data),
+    post<Snapshot>('/rollback/snapshot', data),
 
-  listSnapshots: () => request<Snapshot[]>('/snapshots'),
+  listSnapshots: () => request<Snapshot[]>('/rollback/snapshots'),
 
   restoreSnapshot: (id: string) =>
-    post<{ success: boolean; message: string }>(`/snapshots/${id}/restore`, {}),
+    post<{ success: boolean; message: string }>(`/rollback/restore/${id}`, {}),
 
-  deleteSnapshot: (id: string) => del<{ success: boolean }>(`/snapshots/${id}`),
+  deleteSnapshot: (id: string) => del<{ success: boolean }>(`/rollback/snapshot/${id}`),
 
   validateSnapshot: (id: string) =>
-    request<{ valid: boolean; issues: string[] }>(`/snapshots/${id}/validate`),
+    request<{ valid: boolean; issues: string[] }>('/rollback/validate'),
 
   // Migration History
-  getMigrationHistory: () => request<MigrationHistoryItem[]>('/history'),
-
-  getMigrationStats: () =>
-    request<{ total: number; successful: number; failed: number; rows_migrated: number; avg_duration: number }>('/history/stats'),
+  getMigrationHistory: () => request<MigrationHistoryItem[]>('/migrate/history'),
 }

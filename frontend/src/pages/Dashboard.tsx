@@ -43,21 +43,18 @@ const cardVariants = {
 export default function Dashboard() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [history, setHistory] = useState<MigrationHistoryItem[]>([])
-  const [stats, setStats] = useState<{ total: number; successful: number; failed: number; rows_migrated: number; avg_duration: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     async function load() {
       try {
-        const [h, hist, s] = await Promise.allSettled([
+        const [h, hist] = await Promise.allSettled([
           api.health(),
           api.getMigrationHistory(),
-          api.getMigrationStats(),
         ])
         if (h.status === 'fulfilled') setHealth(h.value)
-        if (hist.status === 'fulfilled') setHistory(hist.value.slice(0, 10))
-        if (s.status === 'fulfilled') setStats(s.value)
+        if (hist.status === 'fulfilled' && Array.isArray(hist.value)) setHistory(hist.value.slice(0, 10))
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load dashboard data')
       } finally {
@@ -66,6 +63,15 @@ export default function Dashboard() {
     }
     load()
   }, [])
+
+  // Compute stats from history (no separate endpoint needed)
+  const stats = history.length > 0 ? {
+    total: history.length,
+    successful: history.filter(h => h.status === 'completed').length,
+    failed: history.filter(h => h.status === 'failed').length,
+    rows_migrated: history.reduce((sum, h) => sum + h.rows_migrated, 0),
+    avg_duration: Math.round(history.reduce((sum, h) => sum + h.duration_seconds, 0) / history.length),
+  } : null
 
   const pieData = stats
     ? [
@@ -132,7 +138,7 @@ export default function Dashboard() {
     <Box>
       <Grid container spacing={3}>
         {statCards.map((card, i) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={card.title}>
+          <Grid item xs={12} sm={6} md={3} key={card.title}>
             <motion.div custom={i} variants={cardVariants} initial="hidden" animate="visible">
               <Card>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -167,7 +173,7 @@ export default function Dashboard() {
         ))}
 
         {/* Migration Success Rate Pie */}
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid item xs={12} md={4}>
           <motion.div custom={4} variants={cardVariants} initial="hidden" animate="visible">
             <Card sx={{ height: 360 }}>
               <CardContent>
@@ -215,7 +221,7 @@ export default function Dashboard() {
         </Grid>
 
         {/* Weekly Activity Bar Chart */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid item xs={12} md={8}>
           <motion.div custom={5} variants={cardVariants} initial="hidden" animate="visible">
             <Card sx={{ height: 360 }}>
               <CardContent>
@@ -244,7 +250,7 @@ export default function Dashboard() {
         </Grid>
 
         {/* System Status */}
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid item xs={12} md={4}>
           <motion.div custom={6} variants={cardVariants} initial="hidden" animate="visible">
             <Card>
               <CardContent>
@@ -285,7 +291,7 @@ export default function Dashboard() {
         </Grid>
 
         {/* Recent Jobs Table */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid item xs={12} md={8}>
           <motion.div custom={7} variants={cardVariants} initial="hidden" animate="visible">
             <Card>
               <CardContent>

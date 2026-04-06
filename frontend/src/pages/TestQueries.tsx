@@ -69,7 +69,7 @@ export default function TestQueries() {
     <Box>
       <Grid container spacing={3}>
         {/* Query Input */}
-        <Grid size={{ xs: 12, md: 5 }}>
+        <Grid item xs={12} md={5}>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <Card>
               <CardContent>
@@ -139,7 +139,7 @@ export default function TestQueries() {
         </Grid>
 
         {/* Results */}
-        <Grid size={{ xs: 12, md: 7 }}>
+        <Grid item xs={12} md={7}>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
             {results.length > 0 ? (
               <Card>

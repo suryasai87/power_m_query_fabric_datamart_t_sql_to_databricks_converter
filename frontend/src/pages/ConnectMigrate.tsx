@@ -116,7 +116,7 @@ export default function ConnectMigrate() {
 
       <Grid container spacing={3}>
         {/* Connection Form */}
-        <Grid size={{ xs: 12, md: 5 }}>
+        <Grid item xs={12} md={5}>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <Card>
               <CardContent>
@@ -191,14 +191,12 @@ export default function ConnectMigrate() {
                     value={config.password}
                     onChange={(e) => updateConfig('password', e.target.value)}
                     fullWidth
-                    slotProps={{
-                      input: {
-                        endAdornment: (
-                          <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
-                            {showPassword ? <HideIcon fontSize="small" /> : <ViewIcon fontSize="small" />}
-                          </IconButton>
-                        ),
-                      },
+                    InputProps={{
+                      endAdornment: (
+                        <IconButton size="small" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <HideIcon fontSize="small" /> : <ViewIcon fontSize="small" />}
+                        </IconButton>
+                      ),
                     }}
                   />
 
@@ -234,7 +232,7 @@ export default function ConnectMigrate() {
         </Grid>
 
         {/* Connection Result + Inventory */}
-        <Grid size={{ xs: 12, md: 7 }}>
+        <Grid item xs={12} md={7}>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
             {testResult && (
               <Card sx={{ mb: 3 }}>

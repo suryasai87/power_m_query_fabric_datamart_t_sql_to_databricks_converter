@@ -172,7 +172,7 @@ export default function RollbackManager() {
       ) : (
         <Grid container spacing={3}>
           {snapshots.map((snapshot, idx) => (
-            <Grid size={{ xs: 12, md: 6 }} key={snapshot.id}>
+            <Grid item xs={12} md={6} key={snapshot.id}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

@@ -69,7 +69,7 @@ export default function SchemaCompare() {
     <Box>
       <Grid container spacing={3}>
         {/* Comparison Form */}
-        <Grid size={12}>
+        <Grid item xs={12}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Card>
               <CardContent>
@@ -110,7 +110,7 @@ export default function SchemaCompare() {
         </Grid>
 
         {error && (
-          <Grid size={12}>
+          <Grid item xs={12}>
             <Alert severity="error">{error}</Alert>
           </Grid>
         )}
@@ -118,7 +118,7 @@ export default function SchemaCompare() {
         {comparison && (
           <>
             {/* Diff Summary */}
-            <Grid size={12}>
+            <Grid item xs={12}>
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 <Card>
                   <CardContent>
@@ -177,7 +177,7 @@ export default function SchemaCompare() {
             </Grid>
 
             {/* Side-by-Side Schema */}
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid item xs={12} md={6}>
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
                 <Card>
                   <CardContent>
@@ -215,7 +215,7 @@ export default function SchemaCompare() {
               </motion.div>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid item xs={12} md={6}>
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
                 <Card>
                   <CardContent>
@@ -256,7 +256,7 @@ export default function SchemaCompare() {
         )}
 
         {!comparison && !error && (
-          <Grid size={12}>
+          <Grid item xs={12}>
             <Card sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 8 }}>
               <Box sx={{ textAlign: 'center' }}>
                 <CompareIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />

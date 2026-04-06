@@ -48,7 +48,7 @@ export default function MigrationHistory() {
     async function load() {
       try {
         const data = await api.getMigrationHistory()
-        setHistory(data)
+        setHistory(Array.isArray(data) ? data : [])
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load history')
       } finally {
@@ -125,7 +125,7 @@ export default function MigrationHistory() {
           { label: 'Failed', value: failedJobs, color: '#FF3621' },
           { label: 'Total Rows', value: totalRows.toLocaleString(), color: '#FFB020' },
         ].map((card, i) => (
-          <Grid size={{ xs: 6, md: 3 }} key={card.label}>
+          <Grid item xs={6} md={3} key={card.label}>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -142,7 +142,7 @@ export default function MigrationHistory() {
         ))}
 
         {/* Migration Trends Line Chart */}
-        <Grid size={{ xs: 12, md: 7 }}>
+        <Grid item xs={12} md={7}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <Card sx={{ height: 360 }}>
               <CardContent>
@@ -176,7 +176,7 @@ export default function MigrationHistory() {
         </Grid>
 
         {/* Rows Migrated Area Chart */}
-        <Grid size={{ xs: 12, md: 5 }}>
+        <Grid item xs={12} md={5}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card sx={{ height: 360 }}>
               <CardContent>
@@ -216,7 +216,7 @@ export default function MigrationHistory() {
         </Grid>
 
         {/* History Table */}
-        <Grid size={12}>
+        <Grid item xs={12}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
             <Card>
               <CardContent>
@@ -227,14 +227,12 @@ export default function MigrationHistory() {
                     placeholder="Search jobs..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon fontSize="small" />
-                          </InputAdornment>
-                        ),
-                      },
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon fontSize="small" />
+                        </InputAdornment>
+                      ),
                     }}
                     sx={{ width: 260 }}
                   />

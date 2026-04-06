@@ -85,7 +85,7 @@ export default function CostEstimator() {
     <Box>
       <Grid container spacing={3}>
         {/* Input Form */}
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid item xs={12} md={4}>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <Card>
               <CardContent>
@@ -115,7 +115,7 @@ export default function CostEstimator() {
                       type="number"
                       value={storageGb}
                       onChange={(e) => setStorageGb(parseInt(e.target.value) || 0)}
-                      slotProps={{ htmlInput: { min: 1, max: 10000 } }}
+                      inputProps={{ min: 1, max: 10000 }}
                       fullWidth
                     />
                   </Box>
@@ -174,12 +174,12 @@ export default function CostEstimator() {
         </Grid>
 
         {/* Results */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid item xs={12} md={8}>
           {estimate ? (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               <Grid container spacing={3}>
                 {/* Cost Summary Cards */}
-                <Grid size={{ xs: 6, md: 3 }}>
+                <Grid item xs={6} md={3}>
                   <Card>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <StorageIcon color="primary" />
@@ -188,7 +188,7 @@ export default function CostEstimator() {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid size={{ xs: 6, md: 3 }}>
+                <Grid item xs={6} md={3}>
                   <Card>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <ComputeIcon color="secondary" />
@@ -197,7 +197,7 @@ export default function CostEstimator() {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid size={{ xs: 6, md: 3 }}>
+                <Grid item xs={6} md={3}>
                   <Card>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <MigrateIcon color="info" />
@@ -206,7 +206,7 @@ export default function CostEstimator() {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid size={{ xs: 6, md: 3 }}>
+                <Grid item xs={6} md={3}>
                   <Card sx={{ border: '1px solid', borderColor: 'primary.main' }}>
                     <CardContent sx={{ textAlign: 'center' }}>
                       <CalcIcon color="primary" />
@@ -219,7 +219,7 @@ export default function CostEstimator() {
                 </Grid>
 
                 {/* Platform Comparison Bar Chart */}
-                <Grid size={{ xs: 12, md: 7 }}>
+                <Grid item xs={12} md={7}>
                   <Card sx={{ height: 380 }}>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>Platform Cost Comparison</Typography>
@@ -248,7 +248,7 @@ export default function CostEstimator() {
                 </Grid>
 
                 {/* Cost Breakdown Pie */}
-                <Grid size={{ xs: 12, md: 5 }}>
+                <Grid item xs={12} md={5}>
                   <Card sx={{ height: 380 }}>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>Databricks Cost Breakdown</Typography>

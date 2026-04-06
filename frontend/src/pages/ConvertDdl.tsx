@@ -64,7 +64,7 @@ export default function ConvertDdl() {
     <Box>
       <Grid container spacing={3}>
         {/* Input DDL */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid item xs={12} md={6}>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
             <Card>
               <CardContent>
@@ -126,7 +126,7 @@ export default function ConvertDdl() {
         </Grid>
 
         {/* Converted DDL */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid item xs={12} md={6}>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
             <Card>
               <CardContent>
@@ -155,7 +155,7 @@ export default function ConvertDdl() {
                   fullWidth
                   value={result?.converted_ddl ?? ''}
                   placeholder="-- Converted DDL will appear here"
-                  slotProps={{ input: { readOnly: true } }}
+                  InputProps={{ readOnly: true }}
                   sx={{
                     '& .MuiInputBase-root': {
                       fontFamily: '"Fira Code", "Cascadia Code", monospace',

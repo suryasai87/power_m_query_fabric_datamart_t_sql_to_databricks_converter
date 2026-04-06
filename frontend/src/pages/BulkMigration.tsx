@@ -91,7 +91,7 @@ export default function BulkMigration() {
       setJob(result)
 
       // SSE for progress updates
-      const es = new EventSource(`/api/migration/progress/${result.id}`)
+      const es = new EventSource(`/api/migrate/stream/${result.id}`)
       eventSourceRef.current = es
       es.onmessage = (event) => {
         const data: MigrationProgress = JSON.parse(event.data)
@@ -141,7 +141,7 @@ export default function BulkMigration() {
     <Box>
       <Grid container spacing={3}>
         {/* Table Selector */}
-        <Grid size={{ xs: 12, md: 7 }}>
+        <Grid item xs={12} md={7}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Card>
               <CardContent>
@@ -219,7 +219,7 @@ export default function BulkMigration() {
         </Grid>
 
         {/* Migration Options & Progress */}
-        <Grid size={{ xs: 12, md: 5 }}>
+        <Grid item xs={12} md={5}>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <Card sx={{ mb: 3 }}>
               <CardContent>
@@ -236,7 +236,7 @@ export default function BulkMigration() {
                     type="number"
                     value={parallelism}
                     onChange={(e) => setParallelism(parseInt(e.target.value) || 1)}
-                    slotProps={{ htmlInput: { min: 1, max: 16 } }}
+                    inputProps={{ min: 1, max: 16 }}
                     helperText="Number of tables migrated simultaneously"
                     fullWidth
                   />

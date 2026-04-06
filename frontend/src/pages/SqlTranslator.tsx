@@ -91,7 +91,7 @@ export default function SqlTranslator() {
     <Box>
       <Grid container spacing={3}>
         {/* Source SQL */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid item xs={12} md={6}>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
             <Card sx={{ height: '100%' }}>
               <CardContent>
@@ -169,7 +169,7 @@ export default function SqlTranslator() {
         </Grid>
 
         {/* Translated SQL */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid item xs={12} md={6}>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
             <Card sx={{ height: '100%' }}>
               <CardContent>
@@ -207,7 +207,7 @@ export default function SqlTranslator() {
                   fullWidth
                   value={result?.translated_sql ?? ''}
                   placeholder="-- Translated SQL will appear here"
-                  slotProps={{ input: { readOnly: true } }}
+                  InputProps={{ readOnly: true }}
                   sx={{
                     '& .MuiInputBase-root': {
                       fontFamily: '"Fira Code", "Cascadia Code", monospace',
@@ -236,7 +236,7 @@ export default function SqlTranslator() {
 
         {/* Execution Results */}
         {execResult && (
-          <Grid size={12}>
+          <Grid item xs={12}>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <Card>
                 <CardContent>
