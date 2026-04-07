@@ -60,7 +60,7 @@ export default function Scheduler() {
   const loadSchedules = async () => {
     try {
       const data = await api.listSchedules()
-      setSchedules(data)
+      setSchedules(Array.isArray(data) ? data : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load schedules')
     } finally {
@@ -114,7 +114,7 @@ export default function Scheduler() {
     setHistoryDialogOpen(true)
     try {
       const data = await api.getScheduleHistory(id)
-      setHistory(data)
+      setHistory(Array.isArray(data) ? data : [])
     } catch {
       setHistory([])
     }

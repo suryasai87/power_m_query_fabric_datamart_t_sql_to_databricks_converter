@@ -97,7 +97,7 @@ export default function ConnectMigrate() {
     setError('')
     try {
       const items = await api.extractInventory(config)
-      setInventory(items)
+      setInventory(Array.isArray(items) ? items : [])
       setActiveStep(2)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to extract inventory')

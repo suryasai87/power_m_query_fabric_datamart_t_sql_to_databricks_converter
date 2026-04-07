@@ -2,14 +2,16 @@ import { useState } from 'react'
 import {
   ThemeProvider,
   CssBaseline,
-  AppBar,
-  Toolbar,
   Typography,
-  Tabs,
-  Tab,
   Box,
-  Container,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Chip,
+  Toolbar,
+  AppBar,
 } from '@mui/material'
 import {
   Dashboard as DashboardIcon,
@@ -38,7 +40,9 @@ import TestQueries from './pages/TestQueries'
 import RollbackManager from './pages/RollbackManager'
 import MigrationHistory from './pages/MigrationHistory'
 
-const tabs = [
+const DRAWER_WIDTH = 240
+
+const navItems = [
   { label: 'Dashboard', icon: <DashboardIcon /> },
   { label: 'SQL Translator', icon: <CodeIcon /> },
   { label: 'Convert DDL', icon: <TableIcon /> },
@@ -52,70 +56,109 @@ const tabs = [
   { label: 'History', icon: <HistoryIcon /> },
 ]
 
+const pages = [
+  <Dashboard />,
+  <SqlTranslator />,
+  <ConvertDdl />,
+  <ConnectMigrate />,
+  <BulkMigration />,
+  <Scheduler />,
+  <SchemaCompare />,
+  <CostEstimator />,
+  <TestQueries />,
+  <RollbackManager />,
+  <MigrationHistory />,
+]
+
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
   exit: { opacity: 0, y: -12, transition: { duration: 0.2 } },
 }
 
-function TabPanel({ children, value, index }: { children: React.ReactNode; value: number; index: number }) {
-  if (value !== index) return null
-  return (
-    <motion.div
-      key={index}
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      style={{ width: '100%' }}
-    >
-      {children}
-    </motion.div>
-  )
-}
-
 export default function App() {
-  const [tab, setTab] = useState(0)
+  const [selected, setSelected] = useState(0)
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-        <AppBar
-          position="sticky"
-          elevation={0}
+      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        {/* Sidebar */}
+        <Drawer
+          variant="permanent"
           sx={{
-            bgcolor: 'background.paper',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
+            width: DRAWER_WIDTH,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              boxSizing: 'border-box',
+              bgcolor: 'background.paper',
+              borderRight: '1px solid',
+              borderColor: 'divider',
+            },
           }}
         >
-          <Toolbar sx={{ gap: 2 }}>
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '8px',
-                bgcolor: 'primary.main',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: 18,
-                color: '#fff',
-              }}
-            >
-              DW
+          {/* Logo / Brand */}
+          <Box sx={{ px: 2.5, py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '8px',
+                  bgcolor: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: '#fff',
+                  flexShrink: 0,
+                }}
+              >
+                DW
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
+                  DW Migration Assistant
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  Power BI / Fabric / T-SQL to Databricks Converter
+                </Typography>
+              </Box>
             </Box>
-            <Box sx={{ flexGrow: 0 }}>
-              <Typography variant="h6" sx={{ color: 'text.primary', lineHeight: 1.2 }}>
-                DW Migration Assistant
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                Power BI / Fabric Datamart T-SQL to Databricks Converter
-              </Typography>
-            </Box>
-            <Box sx={{ flexGrow: 1 }} />
+          </Box>
+
+          {/* Navigation Items */}
+          <List sx={{ px: 1, py: 1.5, flex: 1 }}>
+            {navItems.map((item, i) => (
+              <ListItemButton
+                key={item.label}
+                selected={selected === i}
+                onClick={() => setSelected(i)}
+                sx={{
+                  borderRadius: '8px',
+                  mb: 0.3,
+                  py: 0.8,
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(255, 54, 33, 0.10)',
+                    '&:hover': { bgcolor: 'rgba(255, 54, 33, 0.16)' },
+                    '& .MuiListItemIcon-root': { color: 'primary.main' },
+                    '& .MuiListItemText-primary': { fontWeight: 600, color: 'primary.main' },
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{ variant: 'body2' }}
+                />
+              </ListItemButton>
+            ))}
+          </List>
+
+          {/* Bottom badge */}
+          <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
             <Chip
               label="Databricks"
               size="small"
@@ -125,39 +168,33 @@ export default function App() {
                 fontWeight: 600,
               }}
             />
-          </Toolbar>
-          <Tabs
-            value={tab}
-            onChange={(_, v) => setTab(v)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              px: 2,
-              '& .MuiTab-root': { minWidth: 'auto', px: 2 },
-              '& .MuiTabs-indicator': { height: 3, borderRadius: '3px 3px 0 0' },
-            }}
-          >
-            {tabs.map((t, i) => (
-              <Tab key={i} icon={t.icon} label={t.label} iconPosition="start" />
-            ))}
-          </Tabs>
-        </AppBar>
+          </Box>
+        </Drawer>
 
-        <Container maxWidth="xl" sx={{ py: 3 }}>
+        {/* Main Content */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            bgcolor: 'background.default',
+            p: 3,
+            minHeight: '100vh',
+            overflow: 'auto',
+          }}
+        >
           <AnimatePresence mode="wait">
-            <TabPanel value={tab} index={0}><Dashboard /></TabPanel>
-            <TabPanel value={tab} index={1}><SqlTranslator /></TabPanel>
-            <TabPanel value={tab} index={2}><ConvertDdl /></TabPanel>
-            <TabPanel value={tab} index={3}><ConnectMigrate /></TabPanel>
-            <TabPanel value={tab} index={4}><BulkMigration /></TabPanel>
-            <TabPanel value={tab} index={5}><Scheduler /></TabPanel>
-            <TabPanel value={tab} index={6}><SchemaCompare /></TabPanel>
-            <TabPanel value={tab} index={7}><CostEstimator /></TabPanel>
-            <TabPanel value={tab} index={8}><TestQueries /></TabPanel>
-            <TabPanel value={tab} index={9}><RollbackManager /></TabPanel>
-            <TabPanel value={tab} index={10}><MigrationHistory /></TabPanel>
+            <motion.div
+              key={selected}
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ width: '100%' }}
+            >
+              {pages[selected]}
+            </motion.div>
           </AnimatePresence>
-        </Container>
+        </Box>
       </Box>
     </ThemeProvider>
   )

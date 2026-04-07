@@ -62,7 +62,7 @@ export default function RollbackManager() {
   const loadSnapshots = async () => {
     try {
       const data = await api.listSnapshots()
-      setSnapshots(data)
+      setSnapshots(Array.isArray(data) ? data : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load snapshots')
     } finally {

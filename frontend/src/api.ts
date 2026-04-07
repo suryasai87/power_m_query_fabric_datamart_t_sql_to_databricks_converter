@@ -43,12 +43,23 @@ function del<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' })
 }
 
+/** Safely extract an array from a response that may be wrapped or raw */
+function extractArray<T>(data: unknown, key: string): T[] {
+  if (Array.isArray(data)) return data
+  if (data && typeof data === 'object' && key in data) {
+    const val = (data as Record<string, unknown>)[key]
+    return Array.isArray(val) ? val : []
+  }
+  return []
+}
+
 export const api = {
   // Health
   health: () => request<HealthResponse>('/health'),
 
   // Models
-  getModels: () => request<ModelInfo[]>('/models'),
+  getModels: () =>
+    request<unknown>('/models').then(d => extractArray<ModelInfo>(d, 'models')),
 
   // SQL Translation
   translateSql: (data: TranslateSqlRequest) =>
@@ -66,7 +77,7 @@ export const api = {
     post<ConnectionTestResult>('/connect/test', config),
 
   extractInventory: (config: ConnectionConfig) =>
-    post<InventoryItem[]>('/connect/extract-inventory', config),
+    post<unknown>('/connect/extract-inventory', config).then(d => extractArray<InventoryItem>(d, 'inventory')),
 
   // Migration
   startMigration: (data: { tables: string[]; source_config: ConnectionConfig; options?: Record<string, unknown> }) =>
@@ -75,13 +86,15 @@ export const api = {
   getMigrationStatus: (jobId: string) =>
     request<MigrationJob>(`/migrate/progress/${jobId}`),
 
-  listMigrations: () => request<MigrationJob[]>('/migrate/jobs'),
+  listMigrations: () =>
+    request<unknown>('/migrate/jobs').then(d => extractArray<MigrationJob>(d, 'jobs')),
 
   // Schedules
   createSchedule: (data: Omit<Schedule, 'id' | 'last_run' | 'next_run'>) =>
     post<Schedule>('/schedule/create', data),
 
-  listSchedules: () => request<Schedule[]>('/schedule/list'),
+  listSchedules: () =>
+    request<unknown>('/schedule/list').then(d => extractArray<Schedule>(d, 'schedules')),
 
   deleteSchedule: (id: string) => del<{ success: boolean }>(`/schedule/${id}`),
 
@@ -89,7 +102,7 @@ export const api = {
     put<Schedule>(`/schedule/${id}`, { enabled }),
 
   getScheduleHistory: (id: string) =>
-    request<MigrationHistoryItem[]>('/schedule/executions/history'),
+    request<unknown>(`/schedule/executions/history?job_id=${id}`).then(d => extractArray<MigrationHistoryItem>(d, 'executions')),
 
   // Schema Compare
   compareSchemas: (data: { source_table: string; target_table: string }) =>
@@ -101,13 +114,14 @@ export const api = {
 
   // Test Queries
   runTestQueries: (data: { queries: string[] }) =>
-    post<TestQueryResult[]>('/test/batch', data),
+    post<unknown>('/test/batch', data).then(d => extractArray<TestQueryResult>(d, 'results')),
 
   // Snapshots / Rollback
   createSnapshot: (data: { name: string; tables: string[] }) =>
     post<Snapshot>('/rollback/snapshot', data),
 
-  listSnapshots: () => request<Snapshot[]>('/rollback/snapshots'),
+  listSnapshots: () =>
+    request<unknown>('/rollback/snapshots').then(d => extractArray<Snapshot>(d, 'snapshots')),
 
   restoreSnapshot: (id: string) =>
     post<{ success: boolean; message: string }>(`/rollback/restore/${id}`, {}),
@@ -118,5 +132,6 @@ export const api = {
     request<{ valid: boolean; issues: string[] }>('/rollback/validate'),
 
   // Migration History
-  getMigrationHistory: () => request<MigrationHistoryItem[]>('/migrate/history'),
+  getMigrationHistory: () =>
+    request<unknown>('/migrate/history').then(d => extractArray<MigrationHistoryItem>(d, 'history')),
 }

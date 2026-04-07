@@ -54,7 +54,7 @@ export default function TestQueries() {
     setResults([])
     try {
       const res = await api.runTestQueries({ queries: validQueries })
-      setResults(res)
+      setResults(Array.isArray(res) ? res : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Test execution failed')
     } finally {

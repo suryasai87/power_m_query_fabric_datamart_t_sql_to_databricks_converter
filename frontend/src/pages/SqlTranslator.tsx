@@ -39,7 +39,7 @@ export default function SqlTranslator() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api.getModels().then(setModels).catch(() => {
+    api.getModels().then(d => setModels(Array.isArray(d) ? d : [])).catch(() => {
       setModels([
         { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI' },
         { id: 'claude-sonnet', name: 'Claude Sonnet', provider: 'Anthropic' },
